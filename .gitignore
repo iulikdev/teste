@@ -1,0 +1,32 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.csproj.user
+
+# Node
+node_modules/
+.svelte-kit/
+build/
+dist/
+
+# Environment
+.env
+.env.local
+appsettings.Development.json
+appsettings.Local.json
+
+# Secrets
+*.pfx
+*.cer
+*.key
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

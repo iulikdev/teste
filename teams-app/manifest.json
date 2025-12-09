@@ -1,0 +1,63 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "{{BOT_APP_ID}}",
+  "packageName": "com.contoso.teamscallcenter",
+  "developer": {
+    "name": "Contoso",
+    "websiteUrl": "https://contoso.com",
+    "privacyUrl": "https://contoso.com/privacy",
+    "termsOfUseUrl": "https://contoso.com/terms"
+  },
+  "name": {
+    "short": "Call Center",
+    "full": "Teams Call Center Dashboard"
+  },
+  "description": {
+    "short": "Monitor call center activity in real-time",
+    "full": "A comprehensive dashboard for monitoring call center activity, including active calls, queue statistics, and agent performance metrics."
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#6264A7",
+  "staticTabs": [
+    {
+      "entityId": "dashboard",
+      "name": "Dashboard",
+      "contentUrl": "https://{{DASHBOARD_DOMAIN}}/",
+      "scopes": ["personal"]
+    }
+  ],
+  "configurableTabs": [
+    {
+      "configurationUrl": "https://{{DASHBOARD_DOMAIN}}/config",
+      "canUpdateConfiguration": true,
+      "scopes": ["team", "groupchat"]
+    }
+  ],
+  "bots": [
+    {
+      "botId": "{{BOT_APP_ID}}",
+      "scopes": ["personal", "team", "groupchat"],
+      "supportsFiles": false,
+      "isNotificationOnly": false,
+      "supportsCalling": true,
+      "supportsVideo": true
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "{{DASHBOARD_DOMAIN}}",
+    "{{BOT_DOMAIN}}"
+  ],
+  "webApplicationInfo": {
+    "id": "{{BOT_APP_ID}}",
+    "resource": "api://{{DASHBOARD_DOMAIN}}/{{BOT_APP_ID}}"
+  }
+}
