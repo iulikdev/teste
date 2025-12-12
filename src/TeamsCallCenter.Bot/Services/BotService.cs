@@ -88,7 +88,8 @@ public class BotService : IBotService, IDisposable
         {
             try
             {
-                var mediaSession = CreateMediaSession();
+                var audioSettings = CreateAudioSocketSettings();
+                var mediaSession = call.CreateMediaSession(audioSettings);
                 await call.AnswerAsync(mediaSession).ConfigureAwait(false);
 
                 var handler = new CallHandler(call, _graphLogger, _callEventPublisher, _recordingService);
@@ -127,17 +128,13 @@ public class BotService : IBotService, IDisposable
         }
     }
 
-    private ILocalMediaSession CreateMediaSession()
+    private AudioSocketSettings CreateAudioSocketSettings()
     {
-        var audioSocketSettings = new AudioSocketSettings
+        return new AudioSocketSettings
         {
             StreamDirections = StreamDirection.Recvonly,
             SupportedAudioFormat = AudioFormat.Pcm16K
         };
-
-        var mediaConfiguration = MediaPlatform.CreateMediaConfiguration(audioSocketSettings);
-
-        return _client!.CreateMediaSession(mediaConfiguration);
     }
 
     public Task<ICall?> GetCallAsync(string callId)
