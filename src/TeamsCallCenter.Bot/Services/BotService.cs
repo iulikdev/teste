@@ -41,6 +41,19 @@ public class BotService : IBotService, IDisposable
     {
         _logger.LogInformation("Initializing Bot Service...");
 
+        // Validate required configuration
+        if (string.IsNullOrWhiteSpace(_config.ServiceCname) || _config.ServiceCname.Contains("your-bot"))
+        {
+            throw new InvalidOperationException(
+                "Bot configuration is incomplete. Please set 'Bot:ServiceCname' in appsettings.json to your bot's public DNS name (e.g., 'mybot.azurewebsites.net').");
+        }
+
+        if (string.IsNullOrWhiteSpace(_config.AppId) || _config.AppId.StartsWith("YOUR_"))
+        {
+            throw new InvalidOperationException(
+                "Bot configuration is incomplete. Please set 'Bot:AppId' in appsettings.json to your Azure Bot registration App ID.");
+        }
+
         var authProvider = new AuthenticationProvider(
             _config.AppId,
             _config.AppSecret,
@@ -67,7 +80,8 @@ public class BotService : IBotService, IDisposable
         builder
             .SetAuthenticationProvider(authProvider)
             .SetMediaPlatformSettings(mediaPlatformSettings)
-            .SetNotificationUrl(new Uri($"https://{_config.ServiceCname}/api/calling"));
+            .SetNotificationUrl(new Uri($"https://{_config.ServiceCname}/api/calling"))
+            .SetServiceBaseUrl(new Uri($"https://{_config.ServiceCname}"));
 
         _client = builder.Build();
 
