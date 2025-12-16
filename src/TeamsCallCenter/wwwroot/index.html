@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teams Call Center</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        h1 { margin-bottom: 20px; color: #00d4ff; }
+        h2 { margin: 20px 0 10px; color: #888; font-size: 14px; text-transform: uppercase; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-value { font-size: 36px; font-weight: bold; color: #00d4ff; }
+        .stat-label { font-size: 12px; color: #888; margin-top: 5px; }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .connected { background: #00c853; color: #000; }
+        .disconnected { background: #ff5252; color: #fff; }
+        .connecting { background: #ffc107; color: #000; }
+
+        .calls-list { display: flex; flex-direction: column; gap: 10px; }
+        .call-card {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .call-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .status-ringing { background: #ffc107; animation: pulse 1s infinite; }
+        .status-connected { background: #00c853; }
+        .status-onhold { background: #ff9800; }
+        .status-ended { background: #666; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .call-info { flex: 1; }
+        .call-name { font-weight: 600; }
+        .call-details { font-size: 12px; color: #888; margin-top: 4px; }
+        .call-duration { font-family: monospace; color: #00d4ff; }
+
+        .no-calls {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background: #16213e;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status connecting" id="connectionStatus">Connecting...</div>
+
+    <h1>Teams Call Center</h1>
+
+    <h2>Statistics</h2>
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-value" id="activeCalls">0</div>
+            <div class="stat-label">Active Calls</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="inQueue">0</div>
+            <div class="stat-label">In Queue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalToday">0</div>
+            <div class="stat-label">Total Today</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="answered">0</div>
+            <div class="stat-label">Answered</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="missed">0</div>
+            <div class="stat-label">Missed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="avgDuration">0:00</div>
+            <div class="stat-label">Avg Duration</div>
+        </div>
+    </div>
+
+    <h2>Active Calls</h2>
+    <div class="calls-list" id="callsList">
+        <div class="no-calls">No active calls</div>
+    </div>
+
+    <script>
+        const calls = new Map();
+
+        // SignalR connection
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl('/hubs/calls')
+            .withAutomaticReconnect()
+            .build();
+
+        // Update connection status UI
+        function setConnectionStatus(status) {
+            const el = document.getElementById('connectionStatus');
+            el.className = 'connection-status ' + status;
+            el.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        connection.onreconnecting(() => setConnectionStatus('connecting'));
+        connection.onreconnected(() => setConnectionStatus('connected'));
+        connection.onclose(() => setConnectionStatus('disconnected'));
+
+        // SignalR event handlers
+        connection.on('InitialState', (state) => {
+            console.log('Initial state:', state);
+            calls.clear();
+            state.Calls.forEach(call => calls.set(call.callId, call));
+            updateStatistics(state.Statistics);
+            renderCalls();
+        });
+
+        connection.on('CallStarted', (call) => {
+            console.log('Call started:', call);
+            calls.set(call.callId, call);
+            renderCalls();
+        });
+
+        connection.on('CallEnded', (callId) => {
+            console.log('Call ended:', callId);
+            calls.delete(callId);
+            renderCalls();
+        });
+
+        connection.on('CallUpdated', (call) => {
+            console.log('Call updated:', call);
+            calls.set(call.callId, call);
+            renderCalls();
+        });
+
+        connection.on('StatisticsUpdated', (stats) => {
+            updateStatistics(stats);
+        });
+
+        // Update statistics UI
+        function updateStatistics(stats) {
+            document.getElementById('activeCalls').textContent = stats.activeCalls || 0;
+            document.getElementById('inQueue').textContent = stats.callsInQueue || 0;
+            document.getElementById('totalToday').textContent = stats.totalCallsToday || 0;
+            document.getElementById('answered').textContent = stats.answeredCalls || 0;
+            document.getElementById('missed').textContent = stats.missedCalls || 0;
+            document.getElementById('avgDuration').textContent = formatDuration(stats.averageCallDuration);
+        }
+
+        // Render calls list
+        function renderCalls() {
+            const container = document.getElementById('callsList');
+
+            if (calls.size === 0) {
+                container.innerHTML = '<div class="no-calls">No active calls</div>';
+                return;
+            }
+
+            container.innerHTML = Array.from(calls.values()).map(call => `
+                <div class="call-card">
+                    <div class="call-status status-${call.status.toLowerCase()}"></div>
+                    <div class="call-info">
+                        <div class="call-name">${call.displayName || 'Unknown'}</div>
+                        <div class="call-details">
+                            ${call.phoneNumber || ''}
+                            ${call.direction === 0 ? 'Inbound' : 'Outbound'}
+                            - ${call.status}
+                        </div>
+                    </div>
+                    <div class="call-duration">${formatDuration(call.duration)}</div>
+                </div>
+            `).join('');
+        }
+
+        // Format duration (handles .NET TimeSpan format)
+        function formatDuration(duration) {
+            if (!duration) return '0:00';
+
+            // Handle .NET TimeSpan string format "00:05:30" or object
+            if (typeof duration === 'string') {
+                const parts = duration.split(':');
+                if (parts.length >= 2) {
+                    const mins = parseInt(parts[1]) + parseInt(parts[0]) * 60;
+                    const secs = parseInt(parts[2]?.split('.')[0] || 0);
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                }
+            }
+
+            return '0:00';
+        }
+
+        // Update call durations every second
+        setInterval(() => {
+            if (calls.size > 0) renderCalls();
+        }, 1000);
+
+        // Start connection
+        async function start() {
+            try {
+                await connection.start();
+                setConnectionStatus('connected');
+                console.log('SignalR Connected');
+            } catch (err) {
+                setConnectionStatus('disconnected');
+                console.error('SignalR Error:', err);
+                setTimeout(start, 5000);
+            }
+        }
+
+        start();
+    </script>
+</body>
+</html>
