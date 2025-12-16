@@ -23,7 +23,19 @@ public class CallingController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> HandleNotification()
     {
-        _logger.LogInformation("Received calling notification");
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var userAgent = Request.Headers.UserAgent.ToString();
+
+        _logger.LogWarning("=== TEAMS NOTIFICATION RECEIVED ===");
+        _logger.LogWarning("[{Timestamp}] POST /api/calling from IP: {ClientIp}", timestamp, clientIp);
+        _logger.LogWarning("User-Agent: {UserAgent}", userAgent);
+
+        // Log all headers
+        foreach (var header in Request.Headers)
+        {
+            _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value);
+        }
 
         try
         {
@@ -31,13 +43,9 @@ public class CallingController : ControllerBase
             using var reader = new StreamReader(Request.Body);
             var content = await reader.ReadToEndAsync();
 
-            _logger.LogDebug("Notification content: {Content}", content);
+            _logger.LogWarning("Body length: {Length} chars", content.Length);
+            _logger.LogWarning("Body content: {Content}", content);
 
-            // The Graph Communications SDK handles notifications through its internal mechanism
-            // when properly configured. The notifications are processed by the ICommunicationsClient
-            // that was set up in BotService.InitializeAsync()
-
-            // For now, we acknowledge receipt. The SDK's callback URLs handle the actual processing.
             return Ok();
         }
         catch (Exception ex)
@@ -53,14 +61,25 @@ public class CallingController : ControllerBase
     [HttpPost("callback")]
     public async Task<IActionResult> HandleCallback()
     {
-        _logger.LogInformation("Received calling callback");
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        _logger.LogWarning("=== TEAMS CALLBACK RECEIVED ===");
+        _logger.LogWarning("[{Timestamp}] POST /api/calling/callback from IP: {ClientIp}", timestamp, clientIp);
+
+        // Log all headers
+        foreach (var header in Request.Headers)
+        {
+            _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value);
+        }
 
         try
         {
             using var reader = new StreamReader(Request.Body);
             var content = await reader.ReadToEndAsync();
 
-            _logger.LogDebug("Callback content: {Content}", content);
+            _logger.LogWarning("Body length: {Length} chars", content.Length);
+            _logger.LogWarning("Body content: {Content}", content);
 
             return Ok();
         }

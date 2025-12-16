@@ -7,6 +7,10 @@ using TeamsCallCenter.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// File logging
+var logFilePath = builder.Configuration["Logging:LogFilePath"] ?? "logs/app.log";
+builder.Logging.AddFileLogger(logFilePath);
+
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
