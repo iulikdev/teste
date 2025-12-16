@@ -1,4 +1,4 @@
-namespace TeamsCallCenter.Shared.Models;
+namespace TeamsCallCenter.Api.Models;
 
 public class RecordingInfo
 {

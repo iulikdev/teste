@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using TeamsCallCenter.Bot.Configuration;
-using TeamsCallCenter.Shared.Models;
+using TeamsCallCenter.Api.Bot.Configuration;
+using TeamsCallCenter.Api.Models;
 
-namespace TeamsCallCenter.Bot.Audio;
+namespace TeamsCallCenter.Api.Bot.Audio;
 
 public interface IAudioRecordingService
 {

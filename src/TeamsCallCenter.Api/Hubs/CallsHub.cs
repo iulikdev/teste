@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
-using TeamsCallCenter.Shared.Models;
+using TeamsCallCenter.Api.Models;
 
 namespace TeamsCallCenter.Api.Hubs;
 

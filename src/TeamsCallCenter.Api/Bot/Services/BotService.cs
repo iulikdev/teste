@@ -7,12 +7,12 @@ using Microsoft.Graph.Communications.Client;
 using Microsoft.Graph.Communications.Common.Telemetry;
 using Microsoft.Graph.Communications.Resources;
 using Microsoft.Skype.Bots.Media;
-using TeamsCallCenter.Bot.Audio;
-using TeamsCallCenter.Bot.Configuration;
-using TeamsCallCenter.Bot.Media;
-using TeamsCallCenter.Shared.Models;
+using TeamsCallCenter.Api.Bot.Audio;
+using TeamsCallCenter.Api.Bot.Configuration;
+using TeamsCallCenter.Api.Bot.Media;
+using TeamsCallCenter.Api.Models;
 
-namespace TeamsCallCenter.Bot.Services;
+namespace TeamsCallCenter.Api.Bot.Services;
 
 public class BotService : IBotService, IDisposable
 {
@@ -23,6 +23,8 @@ public class BotService : IBotService, IDisposable
     private readonly IAudioRecordingService? _recordingService;
     private ICommunicationsClient? _client;
     private readonly ConcurrentDictionary<string, CallHandler> _callHandlers = new();
+
+    public ICommunicationsClient? Client => _client;
 
     public BotService(
         IOptions<BotConfiguration> config,
@@ -44,51 +46,60 @@ public class BotService : IBotService, IDisposable
         // Validate required configuration
         if (string.IsNullOrWhiteSpace(_config.ServiceCname) || _config.ServiceCname.Contains("your-bot"))
         {
-            throw new InvalidOperationException(
-                "Bot configuration is incomplete. Please set 'Bot:ServiceCname' in appsettings.json to your bot's public DNS name (e.g., 'mybot.azurewebsites.net').");
+            _logger.LogWarning(
+                "Bot configuration is incomplete. Please set 'Bot:ServiceCname' in appsettings.json to your bot's public DNS name. Bot will run in demo mode.");
+            return;
         }
 
         if (string.IsNullOrWhiteSpace(_config.AppId) || _config.AppId.StartsWith("YOUR_"))
         {
-            throw new InvalidOperationException(
-                "Bot configuration is incomplete. Please set 'Bot:AppId' in appsettings.json to your Azure Bot registration App ID.");
+            _logger.LogWarning(
+                "Bot configuration is incomplete. Please set 'Bot:AppId' in appsettings.json to your Azure Bot registration App ID. Bot will run in demo mode.");
+            return;
         }
 
-        var authProvider = new AuthenticationProvider(
-            _config.AppId,
-            _config.AppSecret,
-            _graphLogger);
-
-        var mediaPlatformSettings = new MediaPlatformSettings
+        try
         {
-            MediaPlatformInstanceSettings = new MediaPlatformInstanceSettings
+            var authProvider = new AuthenticationProvider(
+                _config.AppId,
+                _config.AppSecret,
+                _graphLogger);
+
+            var mediaPlatformSettings = new MediaPlatformSettings
             {
-                CertificateThumbprint = _config.CertificateThumbprint,
-                InstanceInternalPort = _config.InstanceInternalPort,
-                InstancePublicIPAddress = System.Net.IPAddress.Any,
-                InstancePublicPort = _config.InstancePublicPort,
-                ServiceFqdn = _config.ServiceDnsName
-            },
-            ApplicationId = _config.AppId
-        };
+                MediaPlatformInstanceSettings = new MediaPlatformInstanceSettings
+                {
+                    CertificateThumbprint = _config.CertificateThumbprint,
+                    InstanceInternalPort = _config.InstanceInternalPort,
+                    InstancePublicIPAddress = System.Net.IPAddress.Any,
+                    InstancePublicPort = _config.InstancePublicPort,
+                    ServiceFqdn = _config.ServiceDnsName
+                },
+                ApplicationId = _config.AppId
+            };
 
-        var builder = new CommunicationsClientBuilder(
-            _config.BotName,
-            _config.AppId,
-            _graphLogger);
+            var builder = new CommunicationsClientBuilder(
+                _config.BotName,
+                _config.AppId,
+                _graphLogger);
 
-        builder
-            .SetAuthenticationProvider(authProvider)
-            .SetMediaPlatformSettings(mediaPlatformSettings)
-            .SetNotificationUrl(new Uri($"https://{_config.ServiceCname}/api/calling"))
-            .SetServiceBaseUrl(new Uri($"https://{_config.ServiceCname}"));
+            builder
+                .SetAuthenticationProvider(authProvider)
+                .SetMediaPlatformSettings(mediaPlatformSettings)
+                .SetNotificationUrl(new Uri($"https://{_config.ServiceCname}/api/calling"))
+                .SetServiceBaseUrl(new Uri($"https://{_config.ServiceCname}"));
 
-        _client = builder.Build();
+            _client = builder.Build();
 
-        _client.Calls().OnIncoming += OnIncomingCall;
-        _client.Calls().OnUpdated += OnCallUpdated;
+            _client.Calls().OnIncoming += OnIncomingCall;
+            _client.Calls().OnUpdated += OnCallUpdated;
 
-        _logger.LogInformation("Bot Service initialized successfully");
+            _logger.LogInformation("Bot Service initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize Bot Service. Running in demo mode.");
+        }
     }
 
     private void OnIncomingCall(ICallCollection sender, CollectionEventArgs<ICall> args)

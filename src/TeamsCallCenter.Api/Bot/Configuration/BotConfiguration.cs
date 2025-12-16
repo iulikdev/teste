@@ -1,4 +1,4 @@
-namespace TeamsCallCenter.Bot.Configuration;
+namespace TeamsCallCenter.Api.Bot.Configuration;
 
 public class BotConfiguration
 {
@@ -15,10 +15,4 @@ public class BotConfiguration
 
     public Uri CallControlBaseUrl => new Uri($"https://{ServiceCname}:{InstancePublicPort}/api/calling");
     public Uri MediaPlatformInstanceUri => new Uri($"https://{ServiceDnsName}:{InstancePublicPort}/");
-}
-
-public class ApiConfiguration
-{
-    public string BaseUrl { get; set; } = string.Empty;
-    public string SignalRHubUrl { get; set; } = string.Empty;
 }

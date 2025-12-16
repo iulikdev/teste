@@ -1,7 +1,7 @@
 using Microsoft.Graph.Communications.Calls;
-using TeamsCallCenter.Shared.Models;
+using TeamsCallCenter.Api.Models;
 
-namespace TeamsCallCenter.Bot.Services;
+namespace TeamsCallCenter.Api.Bot.Services;
 
 public interface IBotService
 {

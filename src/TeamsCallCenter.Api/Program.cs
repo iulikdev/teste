@@ -1,4 +1,7 @@
 using TeamsCallCenter.Api;
+using TeamsCallCenter.Api.Bot.Audio;
+using TeamsCallCenter.Api.Bot.Configuration;
+using TeamsCallCenter.Api.Bot.Services;
 using TeamsCallCenter.Api.Hubs;
 using TeamsCallCenter.Api.Services;
 
@@ -14,6 +17,15 @@ builder.Services.AddSignalR();
 
 // Call state service (in-memory for now, could be Redis/SQL in production)
 builder.Services.AddSingleton<ICallStateService, InMemoryCallStateService>();
+
+// Bot Configuration
+builder.Services.Configure<BotConfiguration>(builder.Configuration.GetSection("Bot"));
+builder.Services.Configure<RecordingConfiguration>(builder.Configuration.GetSection("Recording"));
+
+// Bot Services
+builder.Services.AddSingleton<ICallEventPublisher, DirectCallEventPublisher>();
+builder.Services.AddSingleton<IAudioRecordingService, AudioRecordingService>();
+builder.Services.AddSingleton<IBotService, BotService>();
 
 // CORS for Svelte dashboard
 builder.Services.AddCors(options =>
@@ -47,5 +59,9 @@ app.MapHub<CallsHub>("/hubs/calls");
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }));
+
+// Initialize Bot Service on startup
+var botService = app.Services.GetRequiredService<IBotService>();
+await botService.InitializeAsync();
 
 app.Run();

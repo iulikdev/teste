@@ -2,11 +2,11 @@ using Microsoft.Graph.Communications.Calls;
 using Microsoft.Graph.Communications.Common.Telemetry;
 using Microsoft.Graph.Communications.Resources;
 using Microsoft.Graph.Models;
-using TeamsCallCenter.Bot.Audio;
-using TeamsCallCenter.Bot.Services;
-using TeamsCallCenter.Shared.Models;
+using TeamsCallCenter.Api.Bot.Audio;
+using TeamsCallCenter.Api.Bot.Services;
+using TeamsCallCenter.Api.Models;
 
-namespace TeamsCallCenter.Bot.Media;
+namespace TeamsCallCenter.Api.Bot.Media;
 
 public class CallHandler : IDisposable
 {
@@ -31,14 +31,14 @@ public class CallHandler : IDisposable
 
         // Start recording if service is available
         CallRecordingSession? recordingSession = null;
-        if (_recordingService != null)
+        if (_recordingService != null && call.Resource.Id != null)
         {
             var callInfo = GetCallInfo();
             recordingSession = _recordingService.StartRecording(call.Resource.Id, callInfo);
         }
 
         _mediaStream = new BotMediaStream(
-            call.Resource.Id,
+            call.Resource.Id ?? string.Empty,
             call.MediaSession,
             logger,
             eventPublisher,
@@ -47,7 +47,7 @@ public class CallHandler : IDisposable
         _call.OnUpdated += OnCallUpdated;
     }
 
-    public string CallId => _call.Resource.Id;
+    public string CallId => _call.Resource.Id ?? string.Empty;
 
     public CallInfo GetCallInfo()
     {
@@ -55,12 +55,12 @@ public class CallHandler : IDisposable
 
         return new CallInfo
         {
-            CallId = resource.Id,
+            CallId = resource.Id ?? string.Empty,
             Status = MapCallState(resource.State),
             StartTime = _startTime,
             Direction = resource.Direction == Microsoft.Graph.Models.CallDirection.Incoming
-                ? Shared.Models.CallDirection.Inbound
-                : Shared.Models.CallDirection.Outbound,
+                ? Models.CallDirection.Inbound
+                : Models.CallDirection.Outbound,
             DisplayName = resource.Source?.Identity?.User?.DisplayName
                 ?? resource.Source?.Identity?.Application?.DisplayName
                 ?? "Unknown"
@@ -77,18 +77,18 @@ public class CallHandler : IDisposable
         });
     }
 
-    private static Shared.Models.CallStatus MapCallState(CallState? state)
+    private static Models.CallStatus MapCallState(CallState? state)
     {
         return state switch
         {
-            CallState.Incoming => Shared.Models.CallStatus.Ringing,
-            CallState.Establishing => Shared.Models.CallStatus.Ringing,
-            CallState.Established => Shared.Models.CallStatus.Connected,
-            CallState.Hold => Shared.Models.CallStatus.OnHold,
-            CallState.Transferring => Shared.Models.CallStatus.Transferring,
-            CallState.TransferAccepted => Shared.Models.CallStatus.Transferring,
-            CallState.Terminated => Shared.Models.CallStatus.Ended,
-            _ => Shared.Models.CallStatus.Connected
+            CallState.Incoming => Models.CallStatus.Ringing,
+            CallState.Establishing => Models.CallStatus.Ringing,
+            CallState.Established => Models.CallStatus.Connected,
+            CallState.Hold => Models.CallStatus.OnHold,
+            CallState.Transferring => Models.CallStatus.Transferring,
+            CallState.TransferAccepted => Models.CallStatus.Transferring,
+            CallState.Terminated => Models.CallStatus.Ended,
+            _ => Models.CallStatus.Connected
         };
     }
 
@@ -98,6 +98,9 @@ public class CallHandler : IDisposable
         _mediaStream.Dispose();
 
         // Stop recording when call ends
-        _recordingService?.StopRecording(_call.Resource.Id);
+        if (_call.Resource.Id != null)
+        {
+            _recordingService?.StopRecording(_call.Resource.Id);
+        }
     }
 }

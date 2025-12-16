@@ -1,4 +1,4 @@
-namespace TeamsCallCenter.Bot.Configuration;
+namespace TeamsCallCenter.Api.Bot.Configuration;
 
 public class RecordingConfiguration
 {

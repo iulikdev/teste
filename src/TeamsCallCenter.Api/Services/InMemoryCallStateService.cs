@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using TeamsCallCenter.Shared.Models;
+using TeamsCallCenter.Api.Models;
 
 namespace TeamsCallCenter.Api.Services;
 

@@ -4,7 +4,7 @@ using Microsoft.Graph.Communications.Common;
 using Microsoft.Graph.Communications.Common.Telemetry;
 using Microsoft.Identity.Client;
 
-namespace TeamsCallCenter.Bot.Services;
+namespace TeamsCallCenter.Api.Bot.Services;
 
 public class AuthenticationProvider : IRequestAuthenticationProvider
 {

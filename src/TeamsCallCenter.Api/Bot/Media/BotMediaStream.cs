@@ -3,11 +3,11 @@ using Microsoft.Graph.Communications.Calls;
 using Microsoft.Graph.Communications.Calls.Media;
 using Microsoft.Graph.Communications.Common.Telemetry;
 using Microsoft.Skype.Bots.Media;
-using TeamsCallCenter.Bot.Audio;
-using TeamsCallCenter.Bot.Services;
-using TeamsCallCenter.Shared.Models;
+using TeamsCallCenter.Api.Bot.Audio;
+using TeamsCallCenter.Api.Bot.Services;
+using TeamsCallCenter.Api.Models;
 
-namespace TeamsCallCenter.Bot.Media;
+namespace TeamsCallCenter.Api.Bot.Media;
 
 public class BotMediaStream : IDisposable
 {
@@ -39,7 +39,7 @@ public class BotMediaStream : IDisposable
             _audioSocket = localSession.AudioSocket;
             if (_audioSocket != null)
             {
-                _audioSocket.AudioMediaReceived += OnAudioMediaReceived;
+                _audioSocket.AudioMediaReceived += OnAudioMediaReceived!;
             }
         }
     }
@@ -79,7 +79,7 @@ public class BotMediaStream : IDisposable
 
         if (_audioSocket != null)
         {
-            _audioSocket.AudioMediaReceived -= OnAudioMediaReceived;
+            _audioSocket.AudioMediaReceived -= OnAudioMediaReceived!;
         }
     }
 }

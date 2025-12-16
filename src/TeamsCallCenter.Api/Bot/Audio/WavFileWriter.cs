@@ -1,4 +1,4 @@
-namespace TeamsCallCenter.Bot.Audio;
+namespace TeamsCallCenter.Api.Bot.Audio;
 
 /// <summary>
 /// Writes PCM audio data to WAV file format.
